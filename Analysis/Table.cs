@@ -7,28 +7,17 @@ namespace Analysis
 {
     public class Table
     {
-        public List<Group> FirstFollow { get; } = new List<Group>();
+        public Dictionary<char,Group> Groups { get; } = new Dictionary<char, Group>();
         public List<string> Patterns { get; } = new List<string>();
-        public List<TableRow> Rows { get; } = new List<TableRow>();
-        public virtual List<char> Terminals => this.CollectTerminals(Patterns);
-        public virtual List<char> Variables
+        public List<TableData> Data { get; } = new List<TableData>();
+        public virtual List<char> Terminals => CollectTerminals(Patterns);
+        public virtual List<char> Variables => new List<char>(this.Groups.Keys);
+        public Table(Dictionary<char,Group> groups, List<string> patterns)
         {
-            get
-            {
-                var lc = new List<char>();
-                foreach (var sp in FirstFollow)
-                {
-                    lc.Add(sp.Variable);
-                }
-                return lc;
-            }
-        }
-        public Table(IEnumerable<Group> first_follow, List<string> patterns)
-        {
-            this.FirstFollow = new List<Group>(first_follow);
+            this.Groups = groups;
             this.Patterns = patterns;
         }
-        public List<char> CollectTerminals(List<string> patterns)
+        public static List<char> CollectTerminals(List<string> patterns)
         {
             var rights = new List<string>();
             var terminals = new List<char>();
@@ -51,70 +40,41 @@ namespace Analysis
             return terminals;
         }
 
-        public List<TableRow> BuildTable()
+        public List<TableData> BuildTable()
         {
             foreach (var p in Patterns)
             {
-                var lcFirst = FindResultFirst(p[0]);
-                var lcFollow = FindResultFollow(p[0]);
+                var FIRST = FindFIRST(p[0]);
+                var FOLLOW = FindFOLLOW(p[0]);
+                //empty
                 if (p.Substring(1, p.Length - 1) == "->@")
                 {
-                    lcFollow.Remove('@');
-                    Rows.Add(new TableRow(p, lcFollow));
+                    FOLLOW.Remove('@');
+                    Data.Add(new TableData(p, FOLLOW));
                 }
-                else
+                else //not empty
                 {
+                    //terminal
                     if (!char.IsUpper(p[3]))
                     {
-                        //terminal
                         var line = new List<char>
                         {
                             p[3]
                         };
-                        Rows.Add(new TableRow(p, line));
+                        Data.Add(new TableData(p, line));
                     }
                     else
                     {
-                        lcFirst.Remove('@');
-                        Rows.Add(new TableRow(p, lcFirst));
+                        FIRST.Remove('@');
+                        Data.Add(new TableData(p, FIRST));
                     } 
                 }
             }
-            return this.Rows;
+            return this.Data;
         }
-        public List<char> FindResultFirst(char c)
-        {
-            var lc = new List<char>();
-            foreach (var sp in FirstFollow)
-            {
-                if (c == sp.Variable)
-                {
-                    foreach (var ch in sp.FIRST)
-                    {
-                        lc.Add(ch);
-                    }
-                    break;
-                }
-
-            }
-            return lc;
-        }
-        public List<char> FindResultFollow(char c)
-        {
-            var lc = new List<char>();
-            foreach (var sp in FirstFollow)
-            {
-                if (c == sp.Variable)
-                {
-                    foreach (var ch in sp.FOLLOW)
-                    {
-                        lc.Add(ch);
-                    }
-                    break;
-                }
-
-            }
-            return lc;
-        }
+        public List<char> FindFIRST(char c) => this.Groups.TryGetValue(c, out var group) ?
+                group.FIRST.ToList() : new List<char>();
+        public List<char> FindFOLLOW(char c) => this.Groups.TryGetValue(c, out var group) ?
+                group.FOLLOW.ToList() : new List<char>();
     }
 }

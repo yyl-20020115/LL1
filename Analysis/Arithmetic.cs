@@ -107,7 +107,7 @@ namespace Analysis
                                 {
                                     if (!s.FIRST.Contains(ch) && ch != '@')
                                     {
-                                        s.AddFirst(ch);
+                                        s.AddToFIRST(ch);
                                     }
                                 }
                             }
@@ -125,7 +125,7 @@ namespace Analysis
                     {
                         if (!s.FIRST.Contains(p[i]))
                         {
-                            s.AddFirst(p[i]);
+                            s.AddToFIRST(p[i]);
                         }
                     }
                 }
@@ -155,7 +155,7 @@ namespace Analysis
         {
             if (this.GROUPS.TryGetValue(c, out var group))
             {
-                group.AddFirst(first);
+                group.AddToFIRST(first);
             }
             else
             {
@@ -166,7 +166,7 @@ namespace Analysis
         {
             if(this.GROUPS.TryGetValue(c,out var group))
             {
-                group.AddFollow(follow);
+                group.AddToFOLLOW(follow);
             }
             else
             {
@@ -210,12 +210,10 @@ namespace Analysis
                 //only one right, like: T->X
                 if (pattern.Length == 4)
                 {
+                    //NEVER CALLED
                     foreach (var ch in this.GetFOLLOW(pattern[0]))
                     {
-                        if (!GetFOLLOW(c).Contains(ch))
-                        {
-                            this.AddToFOLLOW(c,ch);
-                        }
+                        this.AddToFOLLOW(c, ch);
                     }
                 }
                 else
@@ -229,7 +227,7 @@ namespace Analysis
                         {
                             foreach (var ch in GetFOLLOW(pattern[0]))
                             {
-                                if (!GetFOLLOW(c).Contains(ch) && ch != '@')
+                                if (ch != '@')
                                 {
                                     AddToFOLLOW(c,ch);
                                 }
@@ -257,7 +255,7 @@ namespace Analysis
                                         {
                                             foreach (var ch in GetFIRST(s[nextIndex]))
                                             {
-                                                if (!GetFOLLOW(c).Contains(ch) && ch != '@')
+                                                if (ch != '@')
                                                 {
                                                     AddToFOLLOW(c,ch);
                                                 }
@@ -267,10 +265,7 @@ namespace Analysis
                                         {
                                             foreach (var ch in GetFIRST(s[nextIndex]))
                                             {
-                                                if (!GetFOLLOW(c).Contains(ch))
-                                                {
-                                                    AddToFOLLOW(c,ch);
-                                                }
+                                                AddToFOLLOW(c, ch);
                                             }
                                             break;
                                         }
@@ -287,14 +282,13 @@ namespace Analysis
                                 {
                                     foreach (var ch in GetFOLLOW(pattern[0]))
                                     {
-                                        if (!GetFOLLOW(c).Contains(ch) && ch != '@')
+                                        if (ch != '@')
                                         {
                                             AddToFOLLOW(c, ch);
                                         }
                                     }
                                 }
                             }
-                           
                         }
                         currentIndex = pattern.Substring(
                             currentIndex + 1, 

@@ -15,11 +15,13 @@ namespace Analysis
         protected Arithmetic arithmetic;
         protected Table table;
         protected List<string> patterns = new List<string>();
-        protected List<TableRow> rows;
+        protected List<TableData> data;
         protected List<char> terminals;
         protected List<char> variables;
         public MainForm()
         {
+
+
             InitializeComponent();
             RTBShowFirst.ReadOnly = true;
             RTBShowFollow.ReadOnly = true;
@@ -84,7 +86,7 @@ namespace Analysis
             foreach (var sp in arithmetic.GROUPS.Values)
             {
                 builder.AppendLine(sp.Variable + "\t"+ 
-                    sp.FIRST.ConvertAll(c=>c.ToString()).Aggregate((a,n)=>a + " " + n));
+                    sp.FIRST.ToList().ConvertAll(c=>c.ToString()).Aggregate((a,n)=>a + " " + n));
             }
             RTBShowFirst.Text = builder.ToString();
         }
@@ -97,7 +99,7 @@ namespace Analysis
             foreach (var sp in arithmetic.GROUPS.Values)
             {
                 builder.AppendLine(sp.Variable + "\t" +
-                   sp.FOLLOW.ConvertAll(c => c.ToString()).Aggregate((a, n) => a + " " + n));
+                   sp.FOLLOW.ToList().ConvertAll(c => c.ToString()).Aggregate((a, n) => a + " " + n));
             }
             RTBShowFollow.Text = builder.ToString();
             ButtonLL1Analysize.Enabled = true;
@@ -109,9 +111,9 @@ namespace Analysis
             LVTable.Columns.Clear();
             TcRight.SelectedIndex = 2;
 
-            table = new Table(arithmetic.GROUPS.Values, patterns);
+            table = new Table(arithmetic.GROUPS, patterns);
            
-            rows = table.BuildTable();
+            data = table.BuildTable();
 
             this.variables = table.Variables;
             this.terminals = table.Terminals;
@@ -123,25 +125,26 @@ namespace Analysis
             {
                 LVTable.Columns.Add(c.ToString(), w, HorizontalAlignment.Left);
             }
-            foreach (var ch in this.variables)
+            foreach (var variable in this.variables)
             {
                 var lv = new ListViewItem();
 
-                lv.SubItems[0].Text = ch.ToString();
+                lv.SubItems[0].Text = variable.ToString();
 
                 var ls = new string[terminals.Count];
                 for (int i = 0; i < ls.Length; i++)
                 {
                     ls[i] = string.Empty;
                 }
-                foreach(var s in GetResultPatternsByVariableOnLeft(ch))
+                foreach(var pattern in GetResultPatternsByVariableOnLeft(variable))
                 {
-                    var i = 1;
-                    while (i < terminals.Count+1)
+                    var i = 0;
+                    var result_terminals = GetResultTerminals(pattern);
+                    while (i < ls.Length)
                     {
-                        if (GetResultTerminals(s).Contains(char.Parse(LVTable.Columns[i].Text)))
+                        if (result_terminals.Contains(LVTable.Columns[i+1].Text[0]))
                         {
-                            ls[i-1] = s;
+                            ls[i] = pattern;
                         }
                         i++;
                     }
@@ -154,7 +157,7 @@ namespace Analysis
         public List<string> GetResultPatternsByVariableOnLeft(char c)
         {
             var ls = new List<string>();
-            foreach (var ts in rows)
+            foreach (var ts in data)
             {
                 if (c == ts.Pattern[0])
                 {
@@ -163,12 +166,12 @@ namespace Analysis
             }
             return ls;
         }
-        public List<char> GetResultTerminals(string s)
+        public List<char> GetResultTerminals(string pattern)
         {
             var l = new List<char>();
-            foreach (var ts in rows)
+            foreach (var ts in data)
             {
-                if (s == ts.Pattern)
+                if (pattern == ts.Pattern)
                 {
                     l = ts.Terminals;
                     break;
